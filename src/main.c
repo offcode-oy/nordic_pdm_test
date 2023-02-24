@@ -11,89 +11,37 @@
 
 #include <zephyr.h>
 #include <logging/log.h>
-#include <usb/usb_device.h>
-#include <usb/class/usb_audio.h>
+#include <nrfx_clock.h>
+#include "audio.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-static const struct device *mic_dev;
 
-static void data_received(const struct device *dev,
-			  struct net_buf *buffer,
-			  size_t size)
+// Set the clock speed of the chip
+// param: hfclk128 divider, 0 for 128MHz, 1 for 64MHz (default)
+//        hfclk192 divider, 0 for 192MHz, 1 for 96MHz, 2 for 48MHz,	3 for 24MHz, 4 for 12MHz (default)
+void set_clock_settings(uint8_t hfclk128_div, uint8_t hfclk192_div)
 {
-	int ret;
-
-	if (!buffer || !size) {
-		/* This should never happen */
-		return;
-	}
-
-	LOG_DBG("Received %d data, buffer %p", size, buffer);
-
-	/* Check if OUT device buffer can be used for IN device */
-	if (size == usb_audio_get_in_frame_size(mic_dev)) {
-		ret = usb_audio_send(mic_dev, buffer, size);
-		if (ret) {
-			net_buf_unref(buffer);
-		}
-	} else {
-		net_buf_unref(buffer);
-	}
+    if (hfclk128_div > 2) {
+        LOG_ERR("Invalid hfclk128 divider");
+        return;
+    }
+    if (hfclk192_div > 4) {
+        LOG_ERR("Invalid hfclk192 divider");
+        return;
+    }
+    nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, hfclk128_div);
+    nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK192M, hfclk192_div);
 }
-
-static void feature_update(const struct device *dev,
-			   const struct usb_audio_fu_evt *evt)
-{
-	LOG_DBG("Control selector %d for channel %d updated",
-		evt->cs, evt->channel);
-	switch (evt->cs) {
-	case USB_AUDIO_FU_MUTE_CONTROL:
-	default:
-		break;
-	}
-}
-
-static const struct usb_audio_ops hp_ops = {
-	.data_received_cb = data_received,
-	.feature_update_cb = feature_update,
-};
-
-static const struct usb_audio_ops mic_ops = {
-	.feature_update_cb = feature_update,
-};
 
 void main(void)
 {
-	const struct device *hp_dev = device_get_binding("HEADPHONES");
-	int ret;
+	printk("build time: " __DATE__ " " __TIME__ "\n");
 
-	LOG_INF("Entered %s", __func__);
-	mic_dev = device_get_binding("MICROPHONE");
+	audio_init();
 
-	if (!hp_dev) {
-		LOG_ERR("Can not get USB Headphones Device");
-		return;
+	while (1) {
+		LOG_INF(".");
+		k_sleep(K_SECONDS(1));
 	}
-
-	LOG_INF("Found USB Headphones Device");
-
-	if (!mic_dev) {
-		LOG_ERR("Can not get USB Microphone Device");
-		return;
-	}
-
-	LOG_INF("Found USB Microphone Device");
-
-	usb_audio_register(hp_dev, &hp_ops);
-
-	usb_audio_register(mic_dev, &mic_ops);
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return;
-	}
-
-	LOG_INF("USB enabled");
 }
