@@ -1,0 +1,34 @@
+From ea03a0c307da6273ec07cd41202de86e3da907f7 Mon Sep 17 00:00:00 2001
+From: Levente Tamas <levente.tamas@offcode.fi>
+Date: Fri, 3 Mar 2023 16:39:49 +0200
+Subject: [PATCH] Change USB audio endpoint to 16kHz
+
+---
+ subsys/usb/class/audio/usb_audio_internal.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/subsys/usb/class/audio/usb_audio_internal.h b/subsys/usb/class/audio/usb_audio_internal.h
+index e207b4ced4..a9cb6ab55a 100644
+--- a/subsys/usb/class/audio/usb_audio_internal.h
++++ b/subsys/usb/class/audio/usb_audio_internal.h
+@@ -167,7 +167,7 @@
+ #define SYNC_TYPE(dev, i) (SYNC_TYPE_##dev(i) << 2)
+ 
+ #define EP_SIZE(dev, i) \
+-	((GET_RES(dev, i)/8) * CH_CNT(dev, i) * 48)
++	((GET_RES(dev, i)/8) * CH_CNT(dev, i) * 16)
+ 
+ /* *_ID() macros are used to give proper Id to each entity describing
+  * the device. Entities Id must start from 1 that's why 1 is added.
+@@ -491,7 +491,7 @@ struct dev##_descriptor_##i {						\
+ 	.bSubframeSize = res/8,					\
+ 	.bBitResolution = res,					\
+ 	.bSamFreqType = 1,					\
+-	.tSamFreq = {0x80, 0xBB, 0x00},				\
++	.tSamFreq = {0x80, 0x3e, 0x00},				\
+ }
+ 
+ #define INIT_STD_AS_AD_EP(dev, i, addr)					\
+-- 
+2.38.1
+
