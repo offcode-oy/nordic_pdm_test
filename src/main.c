@@ -13,6 +13,7 @@
 #include <logging/log.h>
 #include <nrfx_clock.h>
 #include "audio.h"
+#include <drivers/gpio.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -39,6 +40,9 @@ void main(void)
 	printk("build time: " __DATE__ " " __TIME__ "\n");
 
 	audio_init();
+
+    const struct device *gpio1 = device_get_binding("GPIO_1");
+    gpio_pin_configure(gpio1, 4, GPIO_OUTPUT_HIGH | GPIO_PUSH_PULL | GPIO_DS_ALT);
 
 	while (1) {
 		LOG_INF(".");

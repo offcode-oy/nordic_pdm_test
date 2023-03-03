@@ -22,9 +22,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(audio);
 
-// This is a bit of hack, 48k 16bit stereo for 1ms
-#define USB_BLOCK_SIZE 192
-
 // Thread properties
 #define AUDIO_STACK_SIZE 5000
 #define AUDIO_PRIORITY   -2
